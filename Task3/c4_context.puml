@@ -1,6 +1,4 @@
 @startuml
-top to bottom direction
-
 !includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
 
 Person(user, "Клиент", "Пользователь банка")
