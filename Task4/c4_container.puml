@@ -1,0 +1,44 @@
+@startuml
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Person(user, "Клиент", "Пользователь банка")
+Person(callAgent, "Сотрудник кол-центра", "Обрабатывает заявки новых клиентов, звонит для уточнения условий")
+Person(callPartnerAgent, "Сотрудник партнерского кол-центра", "Обрабатывает заявки новых клиентов, звонит для уточнения условий")
+
+System_Boundary(bank, "Банк 'Стандарт'") {
+    Container(website, "Сайт", "React + PHP", "Отображает список депозитов с актуальными ставками")
+
+    Container(lb, "API Gateway", "Маршрутизация запросов, аутентификация")
+
+    Container(rateService, "Rate Service", "ASP.NET Core", "Управление ставками: базовые ставки, персонализация, расчеты")
+    Container(sftpService, "SFTP Service", "Java Spring Boot", "Передача данных по SFTP протоколу")
+
+    ContainerDb(rateDb, "Rate Database", "PostgreSQL", "Базовые ставки, правила персонализации, история изменений")
+
+    System_Boundary(callCenter, "Система кол-центра") {
+        Container(crm, "CRM система",  "Java Spring Boot")
+    }
+}
+System_Ext(partnerCRM, "Партнёрский кол-центр", "Внешняя система партнёра")
+
+Rel(user, website, "Просматривает информацию по депозитам", "HTTPS")
+Rel(user, callAgent, "Консультация по депозитам")
+Rel(user, callPartnerAgent, "Консультация по депозитам")
+
+
+Rel(website, lb, "API запросы", "HTTPS")
+Rel(crm, lb, "API запросы", "HTTPS")
+
+Rel(lb, rateService, "Ставки", "HTTP")
+
+Rel(callAgent, crm, "Получение данных по актуальным ставкам")
+Rel(callPartnerAgent, partnerCRM, "Получение данных по актуальным ставкам")
+
+Rel(rateService, rateDb, "Ставки и правила")
+Rel(sftpService, rateService, "Получение данных по актуальным ставкам", "HTTPS")
+Rel(sftpService, partnerCRM, "Передача данных по актуальным ставкам", "SFTP")
+
+
+@enduml

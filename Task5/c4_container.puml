@@ -1,0 +1,71 @@
+@startuml
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "Клиент", "Пользователь банка")
+Person(callAgent, "Сотрудник кол-центра", "Обрабатывает заявки новых клиентов")
+Person(backOffice, "Сотрудник бэк-офиса", "Обрабатывает заявки в АБС")
+Person(frontOffice, "Менеджер отделения", "Заводит заявки в АБС")
+
+System_Boundary(bankingSystem, "Банковская система") {
+    Container(apiGateway, "API Gateway", "Единая точка входа для API")
+
+    Container(creditService, "Сервис кредитов", "Java, Spring Boot", "Обработка кредитных заявок, управление кредитами")
+    Container(scoringService, "Сервис скоринга", "Python, ML", "Расчет кредитного рейтинга клиентов")
+    Container(creditEngine, "Camunda BPM", "Java", "Движок кредитного конвейера")
+    Container(crm, "CRM сервис", "Java, Spring Boot", "Управление заявками новых клиентов")
+
+    Container(abs, "АБС", "Java", "Автоматизированная банковская система")
+    Container(internetBankSystem, "Интернет-банк", "ASP.NET", "Система дистанционного банковского обслуживания")
+    Container(web, "Сайт банка", "React + PHP", "Публичный сайт для новых клиентов")
+
+    Container(creditDB, "База данных кредитов", "PostgreSQL", "Хранение данных о кредитах и заявках")
+    Container(scoringDB, "База данных скоринга", "PostgreSQL", "Хранение скоринговых данных и моделей")
+    Container(crmDB, "База данных CRM", "PostgreSQL", "Хранение данных клиентов и заявок")
+    Container(absDB, "База данных АБС", "Oracle", "Основная база данных банка")
+
+    Container(kafka, "Kafka", "Apache Kafka", "Асинхронная коммуникация между сервисами")
+    Container(redis, "Redis", "Redis", "Кэширование и временные данные")
+}
+
+System_Ext(smsGateway, "SMS Gateway", "Шлюз для SMS-сообщений")
+System_Ext(bki, "БКИ", "Бюро кредитных историй")
+
+Rel(user, internetBankSystem, "Работает через интернет-банк", "HTTPS")
+Rel(user, web, "Просматривает условия кредита", "HTTPS")
+Rel(callAgent, crm, "Обрабатывает заявки клиентов", "HTTPS")
+Rel(backOffice, abs, "Обрабатывает заявки в АБС", "HTTPS")
+Rel(frontOffice, web, "Заводит заявки в систему", "HTTPS")
+
+Rel(internetBankSystem, apiGateway, "Интеграционные запросы", "HTTPS")
+Rel(web, apiGateway, "Запросы условий кредита", "HTTPS")
+
+Rel(apiGateway, creditService, "Маршрутизация запросов", "HTTPS")
+Rel(apiGateway, scoringService, "Запросы скоринга", "HTTPS")
+Rel(apiGateway, crm, "CRM операции", "HTTPS")
+Rel(apiGateway, abs, "Запросы к АБС", "HTTPS")
+
+Rel(creditService, creditEngine, "Запуск процессов кредитования", "HTTPS")
+Rel(creditService, scoringService, "Запрос кредитного скоринга", "HTTPS")
+Rel(creditService, abs, "Получение данных клиентов", "HTTPS")
+Rel(creditService, creditDB, "Чтение/запись данных", "HTTPS")
+Rel(creditService, kafka, "Публикация событий", "HTTPS")
+
+Rel(scoringService, scoringDB, "Чтение/запись скоринговых данных", "HTTPS")
+Rel(creditService, redis, "Кэширование результатов из  скоринговых данных или ABS", "HTTPS")
+
+Rel(creditEngine, creditDB, "Хранение состояния процессов", "HTTPS")
+Rel(crm, crmDB, "Чтение/запись CRM данных", "HTTPS")
+Rel(crm, kafka, "Обработка событий заявок", "HTTPS")
+
+Rel(abs, absDB, "Работа с основной базой данных", "HTTPS")
+
+' Внешние связи
+Rel(scoringService, bki, "Запрос кредитной истории", "HTTPS")
+Rel(creditService, smsGateway, "Отправка SMS уведомлений", "HTTPS")
+
+' Обратные связи для уведомлений
+Rel(smsGateway, user, "SMS-код подтверждения", "SMS")
+
+@enduml
