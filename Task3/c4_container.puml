@@ -1,0 +1,60 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Person(user, "Клиент", "Пользователь банка")
+Person(callAgent, "Сотрудник кол-центра", "Обрабатывает заявки новых клиентов, звонит для уточнения условий")
+Person(backOffice, "Сотрудник бэк-офиса", "Обрабатывает заявки в АБС")
+
+System_Boundary(bank, "Банк 'Стандарт'") {
+    Container(website, "Сайт", "React + PHP", "Отображает список депозитов с актуальными ставками")
+    Container(internetBank, "Интернет-банк", "ASP.NET", "Персонализированные ставки для существующих клиентов")
+
+    Container(lb, "API Gateway", "Маршрутизация запросов, аутентификация")
+
+    Container(depositService, "Deposit Service", "Java Spring Boot", "Управление заявками: создание, статусы, валидация")
+    Container(rateService, "Rate Service", "ASP.NET Core", "Управление ставками: базовые ставки, персонализация, расчеты")
+
+    ContainerDb(depositDb, "Deposit Database", "PostgreSQL", "Заявки на депозиты, статусы")
+    ContainerDb(rateDb, "Rate Database", "PostgreSQL", "Базовые ставки, правила персонализации, история изменений")
+
+    Container(kafkaMQ, "Message Queue", "Kafka", "Передача заявок")
+
+    System_Boundary(absSystem, "АБС") {
+        Container(abs, "ABS", "PL-SQL", "Данные клиентов, счета, депозитные продукты")
+        Container(absDB, "ABS DB", "Oracle", "БД АБС")
+    }
+
+    System_Boundary(callCenter, "Система кол-центра") {
+        Container(crm, "CRM система",  "Java Spring Boot", "Управление заявками новых клиентов")
+        ContainerDb(crmBD, "CRM Database", "PostgreSQL", "Заявки новых клиентов")
+    }
+}
+
+System_Ext(smsGateway, "SMS Gateway", "Шлюз для SMS-сообщений")
+
+Rel(user, website, "Подает заявку", "HTTPS")
+Rel(user, internetBank, "Подает заявку", "HTTPS")
+Rel(callAgent, crm, "Обрабатывает заявки", "HTTPS")
+Rel(backOffice, abs, "Обрабатывает в АБС", "Web")
+
+Rel(website, lb, "API запросы", "HTTPS")
+Rel(internetBank, lb, "API запросы", "HTTPS")
+
+Rel(lb, depositService, "Заявки", "HTTP")
+Rel(lb, rateService, "Ставки", "HTTP")
+
+Rel(depositService, rateService, "Получает ставки", "HTTP")
+Rel(depositService, kafkaMQ, "Передача заявки")
+Rel(depositService, depositDb, "Заявки")
+
+Rel(rateService, rateDb, "Ставки и правила")
+Rel(rateService, abs, "Данные клиентов для персонализации", "HTTPS")
+
+Rel(crm, crmBD, "Данные CRM")
+Rel(crm, abs, "Создает заявки", "HTTPS")
+Rel(crm, kafkaMQ, "Получение заявок")
+
+Rel(abs, absDB, "Данные")
+Rel(abs, smsGateway, "SMS", "HTTPS")
+
+@enduml

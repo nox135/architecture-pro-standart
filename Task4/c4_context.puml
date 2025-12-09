@@ -1,0 +1,24 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(user, "Клиент", "Пользователь банка")
+Person(callAgent, "Сотрудник кол-центра", "Обрабатывает заявки новых клиентов, звонит для уточнения условий")
+Person(callPartnerAgent, "Сотрудник партнерского кол-центра", "Обрабатывает заявки новых клиентов, звонит для уточнения условий")
+
+System_Boundary(bank, "Банк 'Стандарт'") {
+System(deposit, "Система депозитов", "Управление депозитами")
+System(crm, "CRM система кол-центра", "Управление заявками новых клиентов")
+}
+System_Ext(partnerCRM, "Cистема партнерскогокол-центра", "Внешняя система партнёра для работы с клиентами")
+
+Rel(user, callAgent, "Консультация по депозитам")
+Rel(user, callPartnerAgent, "Консультация по депозитам")
+Rel(user, deposit, "Просмотр информации по депозитам", "HTTPS")
+Rel(callPartnerAgent, partnerCRM, "Получение данных по актуальным ставкам")
+
+Rel(callAgent, crm, "Получение данных по актуальным ставкам")
+
+Rel(deposit, crm, "Передача данных по ставкам", "HTTP")
+Rel(deposit, partnerCRM, "Передача данных по ставкам", "SFTP")
+
+@enduml
